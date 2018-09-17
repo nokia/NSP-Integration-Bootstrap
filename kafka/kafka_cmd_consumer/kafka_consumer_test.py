@@ -3,10 +3,24 @@ import threading, logging, time
 import multiprocessing
 import sys
 from kafka import KafkaConsumer
-
+import json
 """Collect command-line options in a dictionary"""
 TERMINAL_WIDTH = 0
 TERMINAL_HEIGHT = 0
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+# print bcolors.WARNING + "Warning: No active frommets remain. Continue?" + bcolors.ENDC
+
+
 
 def getopts(argv):
     opts = {}  # Empty dictionary to store key-value pairs.
@@ -48,6 +62,7 @@ def getTerminalSize():
 class Consumer(multiprocessing.Process):
     host_id = ''
     topic_id = ''
+
     def __init__(self, host, topic):
         self.host_id = str(host)
         self.topic_id = topic
@@ -58,6 +73,7 @@ class Consumer(multiprocessing.Process):
         self.stop_event.set()
         
     def run(self):
+        last= 0
         consumer = KafkaConsumer(bootstrap_servers=self.host_id,
                                  auto_offset_reset='earliest',
                                  consumer_timeout_ms=1000)
@@ -65,16 +81,21 @@ class Consumer(multiprocessing.Process):
 
         while not self.stop_event.is_set():
             for message in consumer:
-                print(message)
-                print "-" * width
+                # print(message.value)
+                # print "printing + " + str(TERMINAL_WIDTH)
+                # print bcolors.WARNING + ("*" * (TERMINAL_WIDTH)) + bcolors.ENDC
+                msg = json.loads(message.value)
+                print json.dumps(msg, indent=4, sort_keys=True)
+                
+                print bcolors.WARNING + ("-" * (TERMINAL_WIDTH)) + bcolors.ENDC
             if self.stop_event.is_set():
                 break
 
         consumer.close()
         
-        
+
+
 def main():
-    (TERMINAL_WIDTH, TERMINAL_HEIGHT) = getTerminalSize()
     from sys import argv
     myargs = getopts(argv)
     HOST_IP=''
@@ -103,6 +124,7 @@ def main():
         
         
 if __name__ == "__main__":
+    (TERMINAL_WIDTH, TERMINAL_HEIGHT) = getTerminalSize()
     logging.basicConfig(
         format='%(asctime)s.%(msecs)s:%(name)s:%(thread)d:%(levelname)s:%(process)d:%(message)s',
         level=logging.INFO
