@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import threading, logging, time
 import multiprocessing
-import sys
+import sys,os
 from kafka import KafkaConsumer
 import json
 """Collect command-line options in a dictionary"""
@@ -81,13 +81,11 @@ class Consumer(multiprocessing.Process):
 
         while not self.stop_event.is_set():
             for message in consumer:
-                # print(message.value)
-                # print "printing + " + str(TERMINAL_WIDTH)
-                # print bcolors.WARNING + ("*" * (TERMINAL_WIDTH)) + bcolors.ENDC
-                msg = json.loads(message.value)
-                print json.dumps(msg, indent=4, sort_keys=True)
                 
-                print bcolors.WARNING + ("-" * (TERMINAL_WIDTH)) + bcolors.ENDC
+                msg = json.loads(message.value)
+                print (json.dumps(msg, indent=4, sort_keys=True))                
+                print (bcolors.FAIL + ("-" * (TERMINAL_WIDTH)) + bcolors.ENDC)
+                
             if self.stop_event.is_set():
                 break
 
@@ -104,12 +102,12 @@ def main():
     if '-host' in myargs:  # Example usage.
         HOST_IP = myargs['-host']
     else:
-        sys.exit('Please use as follows python kafka_test_consumer.py -host HostIP -topic TOPIC');
+        sys.exit('Please use as follows: python kafka_test_consumer.py -host ' + bcolors.FAIL + 'HostIP' + bcolors.ENDC + ' -topic ' + bcolors.FAIL + 'TOPIC' + bcolors.ENDC);
 
     if '-topic' in myargs:  # Example usage.
         TOPIC = myargs['-topic']
     else:
-        sys.exit('please use as follows python kafka_test_consumer.py -host HostIP -topic TOPIC');
+        sys.exit('Please use as follows: python kafka_test_consumer.py -host ' + bcolors.FAIL + 'HostIP' + bcolors.ENDC + ' -topic ' + bcolors.FAIL + 'TOPIC' + bcolors.ENDC);
     print(myargs)
 
     tasks = [
@@ -129,4 +127,12 @@ if __name__ == "__main__":
         format='%(asctime)s.%(msecs)s:%(name)s:%(thread)d:%(levelname)s:%(process)d:%(message)s',
         level=logging.INFO
         )
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('Interrupted')
+        try:
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)
+
